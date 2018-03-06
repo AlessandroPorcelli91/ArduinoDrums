@@ -1,0 +1,41 @@
+const int noteON = 144; // MIDI for note on
+const int noteOFF = 128; // MIDI for note off
+const int vmax = 127; // MIDI for max velocity
+const int thresholdA = 500; // Piezo threshold for activation
+const int dim = 10; // Size of the kit
+const int notemap[] = {60, 61, 62, 63, 64, 65, 66, 67, 68, 69};
+int threshold[] = {thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA}; // This array gets initialized to threshold values for the components
+int velocity[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+unsigned long timer[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int check = 0;
+
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void MIDImessage(int MIDInote, int MIDIvelocity) {
+  Serial.write(noteON); //send note on or note off command 
+  Serial.write(MIDInote); //send pitch data
+  Serial.write(MIDIvelocity); //send velocity data
+  Serial.write(noteOFF);
+  Serial.write(MIDInote);
+  Serial.write(MIDIvelocity);
+}
+
+
+void loop() {
+for(int channel = 0; channel < dim; channel++) { //channel scan cycle
+  check = analogRead(channel);
+  if(check > threshold[channel])  {  //a piezo was hit hard enough, the voltage is higher than it was in the previous cycle
+      if(velocity[channel] == 0) //only happens on the first iteration, sets a value for the timer
+        timer[channel] = millis() + 5;
+    velocity[channel] = max(velocity[channel], map(check, threshold[channel], 1023, 0, vmax)); //scales analog read to MIDI velocity in the accepted range, the velocity value is updated to its maximum at each cycle
+    }
+  if(millis() > timer[channel] && velocity[channel] != 0) { //the set time delay has been reached, an instance has been recorded as velocity is not zero
+    MIDImessage(notemap[channel], velocity[channel]); //the note is played.
+    velocity[channel] = 0; //velocity is set back to zero, so the cycle won't access the playing condition unless the first condition is ever satisfied first.
+    timer[channel] = 0; //timer is set back to 0, generally not necessary but this is my code so GTFO.
+    }
+  }
+}
