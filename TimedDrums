@@ -1,9 +1,9 @@
 const int noteON = 144; // MIDI for note on
 const int noteOFF = 128; // MIDI for note off
 const int vmax = 127; // MIDI for max velocity
-const int thresholdA = 500; // Piezo threshold for activation
+const int thresholdA = 500; // Piezo threshold for activation. The final version will have a different set of threshold values, this is just for testing
 const int dim = 10; // Size of the kit
-const int notemap[] = {60, 61, 62, 63, 64, 65, 66, 67, 68, 69};
+const int notemap[] = {60, 61, 62, 63, 64, 65, 66, 67, 68, 69}; //this is a stub, midi notes will be different from this.
 int threshold[] = {thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA, thresholdA}; // This array gets initialized to threshold values for the components
 int velocity[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long timer[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
