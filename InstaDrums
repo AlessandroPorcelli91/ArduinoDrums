@@ -1,11 +1,12 @@
 const int noteON = 144; // MIDI for note on
 const int noteOFF = 128; // MIDI for note off
 const int vmax = 127; // MIDI for max velocity
-const int threshold = 500; // Piezo threshold for activation. The final version will have different threshold values, this is just for testing
+const int threshold = 500; // Piezo threshold for activation
 const int dim = 10; // Size of the kit
 const int notemap[] = {60, 61, 62, 63, 64, 65, 66, 67, 68, 69};
 int decay[] = {threshold, threshold, threshold, threshold, threshold, threshold, threshold, threshold, threshold, threshold}; // This array gets initialized to threshold values for the components
 int velocity[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+unsigned long duration[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int check = 0;
 
 
@@ -13,13 +14,19 @@ void setup() {
   Serial.begin(9600);
 }
 
-void MIDImessage(int MIDInote, int MIDIvelocity) {
-  Serial.write(noteON); //send note on or note off command 
-  Serial.write(MIDInote); //send pitch data
-  Serial.write(MIDIvelocity); //send velocity data
-  Serial.write(noteOFF);
-  Serial.write(MIDInote);
-  Serial.write(MIDIvelocity);
+unsigned long MIDImessage(int MIDInote, int MIDIvelocity) {
+  if(MIDIvelocity != 0) {
+    Serial.write(noteON); //send note on or note off command 
+    Serial.write(MIDInote); //send pitch data
+    Serial.write(MIDIvelocity); //send velocity data
+    return millis()+500;
+  }
+  else  {
+    Serial.write(noteOFF);
+    Serial.write(MIDInote);
+    Serial.write(MIDIvelocity);
+    return 0;
+  }
 }
 
 
@@ -30,10 +37,11 @@ for(int channel = 0; channel < dim; channel++) { //channel scan cycle
     velocity[channel] = map(check, threshold, 1023, 0, vmax); //scales analog read to MIDI velocity in the accepted range, the velocity value is updated to its maximum at each cycle
     }
   if(check <= decay[channel] && velocity[channel] != 0) { //the value at analog read is now descending, the peak voltage was therefore reached at the previous cycle.
-    MIDImessage(notemap[channel], velocity[channel]); //the note is played
+    duration[channel] = MIDImessage(notemap[channel], velocity[channel]); //the note is played
     velocity[channel] = 0; //velocity is set back to zero, so the cycle won't access the playing condition unless the first condition is ever accessed first.
     }
   decay[channel] = max(threshold, check); //safely brings the array back to its initialization, ensuring no notes will be played by other cycles if voltage keeps going down.
+  if((millis() > duration[channel]) && (duration[channel] !=0) && (velocity[channel] == 0))
+    duration[channel] = MIDImessage(notemap[channel], velocity[channel]);
   }
-}
-
+ }
